@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Sequence
 
-# Prefer stable module paths with fallbacks
+# Prefer stable module paths with fallbacks and install Seren planner
 try:
     from plugah.boardroom import BoardRoom
 except Exception:  # pragma: no cover
@@ -16,6 +16,7 @@ except Exception:  # pragma: no cover
         BudgetPolicy = None  # type: ignore
 
 from .io import write_json
+from .seren_planner import install_seren_planner
 
 # Keep a single BoardRoom per-process to preserve internal state across stages.
 _boardroom: BoardRoom | None = None
@@ -23,6 +24,11 @@ _boardroom: BoardRoom | None = None
 def _br() -> BoardRoom:
     global _boardroom
     if _boardroom is None:
+        # Ensure Seren Planner is installed so Plugah uses it
+        try:
+            install_seren_planner()
+        except Exception:
+            pass
         _boardroom = BoardRoom()
         # Ensure audit logger writes to an existing directory
         try:
