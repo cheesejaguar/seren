@@ -82,7 +82,7 @@ class SerenPlanner:
         """Use OpenAI to propose an OAG, budget policy, cost, and OKRs in one pass."""
         if OpenAI is None:
             raise RuntimeError("openai package not installed. pip install openai >= 1.0.0")
-        client = OpenAI()
+        client: Any = OpenAI()
 
         system = (
             "You are an expert organizational designer for an AI agent orchestrator. "
