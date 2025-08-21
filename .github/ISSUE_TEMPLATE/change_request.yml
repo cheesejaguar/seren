@@ -1,0 +1,85 @@
+name: "Change Request (Bug or Feature)"
+description: "Request a bug fix or feature. Include a Claude Code prompt and branch/PR instructions."
+title: "[Bug] or [Feature Request]: <short summary>"
+labels: []
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing an issue! Please:
+        - Prefix the issue title with [Bug] or [Feature Request].
+        - Provide a complete prompt for Claude Code to implement your changes in a new branch.
+        - You are encouraged to create the branch and open a PR yourself while you’re here.
+
+  - type: checkboxes
+    id: title_prefix
+    attributes:
+      label: Title Prefix
+      description: Confirm the issue title starts with [Bug] or [Feature Request].
+      options:
+        - label: I prefixed the title with [Bug] or [Feature Request].
+          required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: Summary / Context
+      description: Briefly explain the problem or desired behavior, constraints, and relevant files/modules.
+      placeholder: >
+        Example: When running `plugah-orchestrate`, the `--mock` flag is ignored during discovery. We should ensure PLUGAH_MODE propagates so mock mode is respected across all phases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: claude_prompt
+    attributes:
+      label: Claude Code Prompt (Detailed)
+      description: Paste a detailed prompt to run with Claude Code. It should instruct the agent to load this repo in your vibecoder of choice, create a new branch, implement the change, update docs/tests, and open a PR.
+      render: markdown
+      value: |
+        You are Claude Code working in the "seren" repository (Plugah Orchestrator).
+
+        Goal:
+        - [Replace with your Bug or Feature description]
+
+        Instructions:
+        - Load the repository in your vibecoder of choice (Cursor, Windsurf, VS Code + Continue, Zed, etc.).
+        - Create a new branch from `main`:
+          - Branch name suggestion: `feature/<short-slug>` or `bugfix/<short-slug>`
+        - Implement the change:
+          - Modify only the minimal necessary files following the existing src/ layout and style.
+          - Update tests under `tests/` and add new ones if needed.
+          - Update `README.md` and/or API docs if behavior or flags change.
+        - Validate locally:
+          - Run `pytest` (mock mode where applicable).
+          - Sanity-check the CLI: `plugah-orchestrate quickstart --mock`.
+        - Commit with a clear message, push the branch to `origin`, and open a Pull Request targeting `main` with a concise summary and checklist.
+
+        Acceptance Criteria:
+        - [ ] Implementation matches the described behavior.
+        - [ ] Tests pass locally (including mock mode if used).
+        - [ ] Docs updated (README/API/CLI help) where applicable.
+        - [ ] No regressions in existing flows (Discovery → PRD → OAG → Execution).
+
+        Notes / Constraints:
+        - [Add budgets, policies, model hints, provider constraints, or integration details here]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Additional Acceptance Criteria (Optional)
+      description: Add any extra, checkable outcomes to consider this request complete.
+      placeholder: |
+        - [ ] CLI flag `--foo` documented with examples
+        - [ ] Web endpoint `/bar` includes `baz` in response
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        While you’re here, you’re welcome to create the branch and open a Pull Request yourself — we love proactive contributions! 🚀
