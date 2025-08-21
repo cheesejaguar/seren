@@ -1,15 +1,15 @@
 """
-Seren Planner: CrewAI-powered planner that Plugah can use for OAG creation.
+Seren Planner: OpenAI-driven planner that Plugah can use for OAG creation.
 
 By default we install this planner into `plugah.boardroom.Planner` so that
 BoardRoom.plan_organization() uses Seren rather than the stock planner.
 
-Notes:
-- In mock/offline mode (PLUGAH_MODE=mock), we generate a deterministic OAG
-  via simple heuristics, no network calls.
-- If CrewAI is available and the environment is configured, this file can be
-  extended to actually orchestrate an agentic planning step. For now, we
-  structure the call but fall back to heuristics if anything is unavailable.
+Behavior:
+- In mock/offline mode (PLUGAH_MODE=mock), generate a deterministic OAG via
+  simple heuristics to keep CI and demos offline.
+- Otherwise, all substantive planning and reasoning (agents, tasks, dependencies,
+  budget policy, cost forecast, OKRs/KPIs) is delegated to the OpenAI API.
+  Heuristics are avoided where possible for flexibility.
 """
 
 from __future__ import annotations
@@ -17,12 +17,6 @@ from __future__ import annotations
 import os
 import uuid
 from typing import Any
-
-try:
-    # CrewAI is available via Plugah dependency, but keep it optional here
-    from crewai import Agent, Task, Crew  # type: ignore
-except Exception:  # pragma: no cover - optional import path
-    Agent = Task = Crew = object  # type: ignore
 
 from plugah.oag_schema import (
     OAG,
@@ -45,6 +39,12 @@ from plugah.oag_schema import (
 )
 from plugah.selector import Selector
 
+try:
+    # Prefer new OpenAI SDK. Import lazily in methods to avoid hard dependency in mock mode.
+    from openai import OpenAI  # type: ignore
+except Exception:  # pragma: no cover
+    OpenAI = None  # type: ignore
+
 
 class SerenPlanner:
     """CrewAI-oriented Planner.
@@ -63,73 +63,159 @@ class SerenPlanner:
         context: dict[str, Any] | None = None,
     ) -> OAG:
         context = context or {}
+        # Keep offline path for tests and CI
         if os.getenv("PLUGAH_MODE") == "mock":
             return self._heuristic_plan(prd, budget_usd)
 
-        # Try a CrewAI-based flow; if anything fails, fall back to heuristics
+        # Use OpenAI API for planning; avoid heuristics when possible
         try:
-            return self._crewai_plan(prd, budget_usd)
+            return self._openai_plan(prd, budget_usd)
         except Exception:
+            # As a safety net, fall back to deterministic plan rather than failing hard.
+            # This keeps the CLI functional even without keys, but is not the preferred path.
             return self._heuristic_plan(prd, budget_usd)
 
     # ----------------------------
-    # CrewAI-backed orchestration
+    # OpenAI-backed orchestration
     # ----------------------------
-    def _crewai_plan(self, prd: dict[str, Any], budget_usd: float) -> OAG:
-        """Use a small CrewAI flow to propose an OAG and parse it.
+    def _openai_plan(self, prd: dict[str, Any], budget_usd: float) -> OAG:
+        """Use OpenAI to propose an OAG, budget policy, cost, and OKRs in one pass."""
+        if OpenAI is None:
+            raise RuntimeError("openai package not installed. pip install openai >= 1.0.0")
+        client = OpenAI()
 
-        The agent is instructed to return strict JSON with:
-        {
-          "agents": [
-            {"role": "CEO", "reports_to": null},
-            {"role": "VP Engineering", "reports_to": "CEO"},
-          ],
-          "tasks": [
-            {"title": "Design MVP", "description": "...", "assignee": "VP Engineering", "depends_on": [], "dod": "..."}
-          ]
+        system = (
+            "You are an expert organizational designer for an AI agent orchestrator. "
+            "Propose a lean, effective team and task plan strictly as JSON. "
+            "Be mindful of budget and scope."
+        )
+        user = (
+            "Design an Organizational Agent Graph (OAG) for the following PRD and budget.\n"
+            "Return ONLY JSON matching the provided schema.\n\n"
+            f"PRD: {prd}\nBudget USD: {budget_usd}\n"
+        )
+
+        # Response schema captures decisions to avoid local heuristics
+        schema = {
+            "name": "oag_design",
+            "schema": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "agents": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "properties": {
+                                "role": {"type": "string"},
+                                "level": {
+                                    "type": "string",
+                                    "enum": [
+                                        "C_SUITE",
+                                        "VP",
+                                        "DIRECTOR",
+                                        "MANAGER",
+                                        "IC",
+                                    ],
+                                },
+                                "reports_to": {"type": ["string", "null"]},
+                            },
+                            "required": ["role", "level"],
+                        },
+                    },
+                    "tasks": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "properties": {
+                                "title": {"type": "string"},
+                                "description": {"type": "string"},
+                                "assignee": {"type": "string"},
+                                "depends_on": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "default": [],
+                                },
+                                "dod": {"type": "string"},
+                            },
+                            "required": ["title", "assignee"],
+                        },
+                    },
+                    "budget_policy": {
+                        "type": "string",
+                        "enum": ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"],
+                    },
+                    "forecast_cost_usd": {"type": "number"},
+                    "okrs": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "properties": {
+                                "owner_role": {"type": "string"},
+                                "objective": {"type": "string"},
+                                "key_results": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "metric": {"type": "string"},
+                                            "target": {"type": ["number", "integer"]},
+                                        },
+                                        "required": ["metric", "target"],
+                                        "additionalProperties": False,
+                                    },
+                                    "default": [],
+                                },
+                                "kpis": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "metric": {"type": "string"},
+                                            "target": {"type": ["number", "integer"]},
+                                        },
+                                        "required": ["metric", "target"],
+                                        "additionalProperties": False,
+                                    },
+                                    "default": [],
+                                },
+                            },
+                            "required": ["owner_role", "objective"],
+                        },
+                    },
+                },
+                "required": ["agents", "tasks", "budget_policy"],
+            },
         }
-        If anything fails or JSON is malformed, we fall back to heuristics.
-        """
 
-        # Example (no-op) crew to indicate where agent logic would run.
-        if Crew is object:
-            # crewai not importable in environment; fall back
-            return self._heuristic_plan(prd, budget_usd)
-
-        org_architect = Agent(
-            role="Org Architect",
-            goal="Design an effective organizational graph for the PRD",
-            backstory="Seasoned org designer focusing on lean, budget-sensitive teams.",
-            allow_delegation=False,
+        completion = client.chat.completions.create(
+            model=os.getenv("SEREN_MODEL", "gpt-4o-mini"),
+            response_format={
+                "type": "json_schema",
+                "json_schema": schema,
+            },
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.2,
         )
+        content = completion.choices[0].message.content or "{}"
 
-        design_task = Task(
-            description=(
-                "You are designing an Organizational Agent Graph (OAG) for the PRD below.\n"
-                "Return ONLY JSON (no prose) matching this schema: \n"
-                "{\n  \"agents\": [ { \"role\": string, \"reports_to\": string|null } ],\n"
-                "  \"tasks\": [ { \"title\": string, \"description\": string, \"assignee\": string, \"depends_on\": string[], \"dod\": string } ]\n}"
-                "\nWhere 'assignee' and 'reports_to' refer to agent roles.\n"
-                f"PRD: {prd}\nBudget USD: {budget_usd}\n"
-            ),
-            expected_output=(
-                "Strict JSON matching the schema above."
-            ),
-            agent=org_architect,
-        )
-
-        crew = Crew(agents=[org_architect], tasks=[design_task])
-        output = None
+        import json
         try:
-            res = crew.kickoff()  # May call providers
-            output = str(res)
-        except Exception:
-            return self._heuristic_plan(prd, budget_usd)
+            design = json.loads(content)
+        except Exception as e:  # pragma: no cover
+            # Last-resort parse (should not happen with JSON schema)
+            parsed = self._parse_design_output(content)
+            if not parsed:
+                raise e
+            design = parsed
 
-        parsed = self._parse_design_output(output)
-        if not parsed:
-            return self._heuristic_plan(prd, budget_usd)
-        return self._oag_from_design(prd, budget_usd, parsed)
+        return self._oag_from_design(prd, budget_usd, design)
 
     def _parse_design_output(self, text: str) -> dict[str, Any] | None:
         import json
@@ -151,6 +237,7 @@ class SerenPlanner:
             return None
 
     def _role_to_level(self, role: str) -> RoleLevel:
+        # Fallback only; primary path expects level from OpenAI output
         r = role.lower()
         if any(k in r for k in ["ceo", "cto", "cfo", "chief"]):
             return RoleLevel.C_SUITE
@@ -169,10 +256,17 @@ class SerenPlanner:
         objectives = prd.get("objectives", [])
 
         meta = OrgMeta(project_id=project_id, title=title, domain=domain)
+        # Use model-chosen policy and cost forecast if provided
+        policy_name = str(design.get("budget_policy", "BALANCED")).upper()
+        try:
+            policy = BudgetPolicy[policy_name]
+        except Exception:
+            policy = BudgetPolicy.BALANCED
+        forecast = float(design.get("forecast_cost_usd", 0.0) or 0.0)
         budget = BudgetModel(
             caps=BudgetCaps(soft_cap_usd=budget_usd * 0.8, hard_cap_usd=budget_usd),
-            policy=self._determine_budget_policy(budget_usd, len(objectives)),
-            forecast_cost_usd=0.0,
+            policy=policy,
+            forecast_cost_usd=forecast,
         )
         oag = OAG(meta=meta, budget=budget, nodes={}, edges=[])
 
@@ -181,7 +275,12 @@ class SerenPlanner:
         agents = design.get("agents", []) or []
         for a in agents:
             role = str(a.get("role", "IC")).strip()
-            agent = AgentSpec(id=str(uuid.uuid4()), role=role, level=self._role_to_level(role))
+            level_name = str(a.get("level", "")).upper()
+            try:
+                level = RoleLevel[level_name]
+            except Exception:
+                level = self._role_to_level(role)
+            agent = AgentSpec(id=str(uuid.uuid4()), role=role, level=level)
             oag.add_node(agent)
             role_to_id[role] = agent.id
 
@@ -226,42 +325,47 @@ class SerenPlanner:
                 if from_id and to_id:
                     oag.add_edge(Edge(id=str(uuid.uuid4()), from_id=from_id, to_id=to_id))
 
-        # Compute forecast and attach OKRs/KPIs
-        oag.budget.forecast_cost_usd = self._forecast_cost(oag)
-        self._attach_okrs_kpis(oag)
+        # Attach OKRs/KPIs from model output if present; otherwise fall back
+        self._attach_okrs_kpis_from_design(oag, design)
         return oag
 
-    def _attach_okrs_kpis(self, oag: OAG) -> None:
-        agents = oag.get_agents()
-        tasks = oag.get_tasks()
-        for agent in agents.values():
-            # Simple: one OKR per agent based on assigned tasks
-            owned_tasks = [t for t in tasks.values() if t.agent_id == agent.id]
-            if not owned_tasks:
+    def _attach_okrs_kpis_from_design(self, oag: OAG, design: dict[str, Any]) -> None:
+        okrs = design.get("okrs") or []
+        role_to_id = {a.role: a.id for a in oag.get_agents().values()}
+        for entry in okrs:
+            owner_role = str(entry.get("owner_role", "")).strip()
+            owner_id = role_to_id.get(owner_role)
+            if not owner_id:
                 continue
             obj = Objective(
                 id=str(uuid.uuid4()),
-                title=f"Deliver assigned tasks ({len(owned_tasks)})",
-                description="Complete planned work on time and within budget",
-                owner_agent_id=agent.id,
+                title=str(entry.get("objective", "Deliver outcomes")),
+                description=str(entry.get("objective", "Deliver outcomes")),
+                owner_agent_id=owner_id,
             )
-            kr = KeyResult(
-                id=str(uuid.uuid4()),
-                objective_id=obj.id,
-                metric="tasks_done",
-                target=len(owned_tasks),
-                current=0,
-            )
-            agent.okrs.append(OKR(objective=obj, key_results=[kr]))
-            agent.kpis.append(
-                KPI(
-                    id=str(uuid.uuid4()),
-                    metric="throughput",
-                    target=len(owned_tasks),
-                    current=0,
-                    owner_agent_id=agent.id,
+            krs: list[KeyResult] = []
+            for kr in entry.get("key_results", []) or []:
+                krs.append(
+                    KeyResult(
+                        id=str(uuid.uuid4()),
+                        objective_id=obj.id,
+                        metric=str(kr.get("metric", "metric")),
+                        target=float(kr.get("target", 1)),
+                        current=0,
+                    )
                 )
-            )
+            oag.get_agents()[owner_id].okrs.append(OKR(objective=obj, key_results=krs))
+            # KPIs
+            for kpi in entry.get("kpis", []) or []:
+                oag.get_agents()[owner_id].kpis.append(
+                    KPI(
+                        id=str(uuid.uuid4()),
+                        metric=str(kpi.get("metric", "metric")),
+                        target=float(kpi.get("target", 1)),
+                        current=0,
+                        owner_agent_id=owner_id,
+                    )
+                )
 
     # ----------------------------
     # Deterministic OAG generator
@@ -308,6 +412,7 @@ class SerenPlanner:
 
     # ---- Heuristic helpers (adapted from stock planner patterns) ----
     def _determine_budget_policy(self, budget: float, num_objectives: int) -> BudgetPolicy:
+        # Heuristic path retained for mock mode only
         if budget < 20 or num_objectives > 5:
             return BudgetPolicy.CONSERVATIVE
         elif budget > 100 and num_objectives <= 3:
@@ -403,7 +508,7 @@ class SerenPlanner:
             oag.add_edge(Edge(id=str(uuid.uuid4()), from_id=tasks[i-1].id, to_id=tasks[i].id))
 
     def _forecast_cost(self, oag: OAG) -> float:
-        # Simple forecast: number of agents * base rate
+        # Heuristic forecast used only in mock path
         num_agents = len(oag.get_agents())
         return round(num_agents * 10.0, 2)
 
