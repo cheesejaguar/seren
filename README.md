@@ -97,7 +97,9 @@ Endpoints:
 
 ## How it integrates with Plugah 🔌
 
-Seren wraps [Plugah](https://github.com/cheesejaguar/plugah)’s `BoardRoom` pipeline with stable calls:
+Seren now provides a planner used by [Plugah](https://github.com/cheesejaguar/plugah) during the Organization Planning phase. We inject `SerenPlanner` as Plugah’s `Planner`, so when `BoardRoom.plan_organization()` runs, it calls into Seren.
+
+Pipeline entrypoints remain:
 
 - `startup_phase(problem, budget_usd, model_hint?, policy?)` → questions
 - `process_discovery(answers, problem, budget_usd, model_hint?, policy?)` → PRD
@@ -106,6 +108,23 @@ Seren wraps [Plugah](https://github.com/cheesejaguar/plugah)’s `BoardRoom` pip
 
 Mock mode: set `PLUGAH_MODE=mock` or pass `--mock`/`mock: true` to run deterministically without network/API keys.
 
+### SerenPlanner architecture
+
+- Default: Seren installs itself as the planner at import-time. You can disable it via `SEREN_PLANNER=off`.
+- Mock: In `PLUGAH_MODE=mock`, Seren generates a deterministic OAG with budget-aware heuristics (no network calls).
+- CrewAI path: In non-mock mode, Seren spins up a small Crew (e.g., an “Org Architect” agent) and instructs it to emit strict JSON describing:
+  - `agents`: role hierarchy via `reports_to`
+  - `tasks`: title/description/assignee/dependencies/DoD
+  Seren parses the JSON and constructs a valid OAG (Agents, Tasks, Edges). If parsing fails or providers are unavailable, Seren falls back to heuristics.
+
+### Provider configuration
+
+Seren relies on the underlying CrewAI/LiteLLM provider configuration. Common environment variables:
+- `OPENAI_API_KEY` (or other LiteLLM-compatible providers)
+- Optional: model hints via CLI `--model` are forwarded to Plugah where possible
+
+You can also disable Seren’s injection with `SEREN_PLANNER=off` to use Plugah’s stock planner.
+
 ## Testing 🧪
 
 ```bash
@@ -113,6 +132,8 @@ pytest -q
 ```
 
 Tests run in mock mode and validate Discovery → PRD → OAG → Execution, asserting a `total_cost` is returned.
+
+Additional CLI smoke test validates artifact generation via `quickstart --mock`.
 
 ## Notes 🧭
 
