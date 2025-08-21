@@ -253,7 +253,7 @@ class SerenPlanner:
         project_id = str(uuid.uuid4())
         title = prd.get("title", "Project")
         domain = prd.get("domain", "general")
-        objectives = prd.get("objectives", [])
+        # objectives may be considered by the model; not needed locally
 
         meta = OrgMeta(project_id=project_id, title=title, domain=domain)
         # Use model-chosen policy and cost forecast if provided
