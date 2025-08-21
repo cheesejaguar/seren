@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugah-orchestrator"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI agent orchestrator scaffold powered by Plugah (discovery → PRD → org plan → execution)."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -22,7 +22,6 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-  "plugah>=0.1.0",
   "pydantic>=2",
   "typer>=0.12",
   "rich>=13",
@@ -52,3 +51,8 @@ target-version = "py311"
 python_version = "3.11"
 strict = false
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --cov=src --cov-report=term-missing --cov-fail-under=75"
+norecursedirs = ["vendor", ".git", "dist", "build", ".mypy_cache", ".pytest_cache"]

@@ -113,6 +113,25 @@ Pipeline entrypoints remain:
 
 Mock mode: set `PLUGAH_MODE=mock` or pass `--mock`/`mock: true` to run deterministically without network/API keys.
 
+### Drop-in usage in other Plugah apps
+
+Use Seren as an advanced planner in any Plugah-based project without code changes:
+
+```python
+# Install Seren’s planner by importing the package
+import plugah_seren  # noqa: F401
+from plugah.boardroom import BoardRoom
+
+br = BoardRoom()
+# All planning now uses Seren under the hood
+oag = await br.plan_organization(prd, budget_usd=100)
+```
+
+Controls:
+- Disable auto-install: `SEREN_PLANNER=off` (use Plugah’s stock planner).
+- Mock mode for deterministic runs: `PLUGAH_MODE=mock`.
+- Model hint for non-mock planning: `SEREN_MODEL=gpt-4o-mini`.
+
 ### SerenPlanner architecture
 
 - Default: Seren installs itself as the planner at import-time. You can disable it via `SEREN_PLANNER=off`.
@@ -132,13 +151,12 @@ You can also disable Seren’s injection with `SEREN_PLANNER=off` to use Plugah�
 
 ## Testing 🧪
 
-```bash
-pytest -q
-```
+- Quick run: `pytest -q`
+- Coverage: pytest is configured to include `--cov=src --cov-report=term-missing --cov-fail-under=75` by default (see `pyproject.toml`). The suite fails if total coverage drops below 75%.
+- HTML coverage (optional): `pytest --cov=src --cov-report=html` then open `htmlcov/index.html`.
+- Vendor tests: Tests under `vendor/` (Plugah submodule) are excluded from discovery.
 
-Tests run in mock mode and validate Discovery → PRD → OAG → Execution, asserting a `total_cost` is returned.
-
-Additional CLI smoke test validates artifact generation via `quickstart --mock`.
+Tests run in mock mode and validate Discovery → PRD → OAG → Execution, asserting a `total_cost` is returned. Additional CLI test validates artifact generation via `quickstart --mock`.
 
 ## Notes 🧭
 
