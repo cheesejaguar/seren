@@ -10,6 +10,12 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  sanity:
+    name: Sanity
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "workflow loaded"
+
   build:
     name: Build package
     runs-on: ubuntu-latest
