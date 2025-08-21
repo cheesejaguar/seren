@@ -11,3 +11,35 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# Python bytecode variants (complement)
+*.py[cod]
+.Python
+
+# Test & coverage
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Tooling caches
+.cache/
+
+# Local env files
+.env
+.env.*
+local.env
+
+# Project-generated JSON artifacts
+answers.json
+questions.json
+prd.json
+oag.json
+results.json
