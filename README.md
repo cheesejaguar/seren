@@ -1,16 +1,16 @@
-# Seren — Plugah Orchestrator
+# Seren — Plugah Orchestrator ✨
 
-Seren is a minimal, runnable orchestrator around **Plugah** that drives dynamic agentic graph generation end‑to‑end:
+Seren is a minimal, runnable orchestrator around **[Plugah](https://github.com/cheesejaguar/plugah)** that drives dynamic agentic graph generation end‑to‑end:
 
-1) Discovery → 2) PRD → 3) Organization Planning (OAG) → 4) Execution
+1) 🔎 Discovery → 2) 📝 PRD → 3) 🧩 Organization Planning (OAG) → 4) 🚀 Execution
 
-It ships with a CLI and a small FastAPI service. Offline “mock” mode is supported for CI and demos.
+It ships with a CLI and a small FastAPI service. Offline “mock” mode is supported for CI and demos. 🧪
 
 ## Requirements
 
 - Python 3.11+
 
-## Install
+## Install 📦
 
 ```bash
 # Editable install (recommended for development)
@@ -20,7 +20,7 @@ pip install -e ".[dev]"
 # pip install "git+https://github.com/cheesejaguar/plugah.git"
 ```
 
-## Quickstart (CLI)
+## Quickstart (CLI) ⚡️
 
 Run the full pipeline non‑interactively in offline mock mode:
 
@@ -33,7 +33,7 @@ plugah-orchestrate quickstart \
   --mock
 ```
 
-Stage-by-stage:
+Stage‑by‑stage:
 
 ```bash
 # 1) Discovery → questions.json
@@ -49,7 +49,7 @@ plugah-orchestrate plan --answers-file answers.json --policy AGGRESSIVE --mock
 plugah-orchestrate run --mock
 ```
 
-Generated artifacts in the repo root:
+Generated artifacts in the repo root 📁:
 
 - questions.json
 - answers.json (if you used quickstart auto generation)
@@ -57,7 +57,7 @@ Generated artifacts in the repo root:
 - oag.json
 - results.json
 
-## Web API
+## Web API 🌐
 
 Start the API server:
 
@@ -95,9 +95,9 @@ Endpoints:
 
 - POST /execute → returns execution result with `total_cost`.
 
-## How it integrates with Plugah
+## How it integrates with Plugah 🔌
 
-Seren wraps Plugah’s `BoardRoom` pipeline with stable calls:
+Seren wraps [Plugah](https://github.com/cheesejaguar/plugah)’s `BoardRoom` pipeline with stable calls:
 
 - `startup_phase(problem, budget_usd, model_hint?, policy?)` → questions
 - `process_discovery(answers, problem, budget_usd, model_hint?, policy?)` → PRD
@@ -106,7 +106,7 @@ Seren wraps Plugah’s `BoardRoom` pipeline with stable calls:
 
 Mock mode: set `PLUGAH_MODE=mock` or pass `--mock`/`mock: true` to run deterministically without network/API keys.
 
-## Testing
+## Testing 🧪
 
 ```bash
 pytest -q
@@ -114,7 +114,7 @@ pytest -q
 
 Tests run in mock mode and validate Discovery → PRD → OAG → Execution, asserting a `total_cost` is returned.
 
-## Notes
+## Notes 🧭
 
-- The CLI accepts `--policy` (CONSERVATIVE|BALANCED|AGGRESSIVE) and `--model` as a hint to Plugah.
+- The CLI accepts `--policy` (CONSERVATIVE|BALANCED|AGGRESSIVE) and `--model` as a hint to [Plugah](https://github.com/cheesejaguar/plugah).
 - OAG and results are safely JSON‑serialized even when returned as Pydantic models.
