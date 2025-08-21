@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "AI agent orchestrator scaffold powered by Plugah (discovery → PRD → org plan → execution)."
 requires-python = ">=3.11"
 dependencies = [
-  "plugah",
+  "plugah>=0.1.0",
   "pydantic>=2",
   "typer>=0.12",
   "rich>=13",
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "mypy>=1.10", "ruff>=0.5"]
 
 [project.scripts]
 plugah-orchestrate = "app.cli:app"
