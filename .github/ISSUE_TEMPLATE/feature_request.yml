@@ -1,0 +1,96 @@
+name: "✨ Feature Request"
+description: "Propose an enhancement with a Claude Code prompt and branch/PR plan."
+title: "[Feature Request]: <short summary>"
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make Seren better? Please:
+        - Prefix the title with [Feature Request].
+        - Provide a complete prompt for Claude Code to implement your feature in a new branch.
+        - Feel free to create the branch and open a PR while you’re here. 🚀
+
+  - type: checkboxes
+    id: title_prefix
+    attributes:
+      label: Title Prefix
+      description: Confirm the title starts with [Feature Request].
+      options:
+        - label: I prefixed the title with [Feature Request].
+          required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: Summary / Motivation
+      description: What problem does this solve? What’s the value?
+      placeholder: >
+        Example: Add `--dry-run` to preview costs and planned actions without execution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Constraints
+      description: Add clear scope boundaries, budget/policy considerations, or compat notes.
+      placeholder: |
+        - CLI flag: `--dry-run`
+        - No provider calls; should only simulate execution
+        - Update README examples
+    validations:
+      required: false
+
+  - type: textarea
+    id: claude_prompt
+    attributes:
+      label: Claude Code Prompt (Detailed)
+      description: Paste a detailed prompt for Claude Code. Instruct the agent to load this repo in your vibecoder of choice, create a new branch, implement the feature, update tests/docs, and open a PR.
+      render: markdown
+      value: |
+        You are Claude Code working in the "seren" repository (Plugah Orchestrator).
+
+        Feature:
+        - [Replace with the desired behavior and constraints]
+
+        Instructions:
+        - Load the repository in your vibecoder of choice (Cursor, Windsurf, VS Code + Continue, Zed, etc.).
+        - Create a new branch from `main`:
+          - Branch name suggestion: `feature/<short-slug>`
+        - Implement the feature:
+          - Keep changes minimal and focused. Follow the existing `src/` layout and style.
+          - Add/adjust tests under `tests/` to cover the new behavior.
+          - Update `README.md` and CLI help with examples and flags.
+        - Validate locally:
+          - Run `pytest` (mock mode where applicable).
+          - Sanity-check the CLI: `plugah-orchestrate quickstart --mock`.
+        - Commit, push the branch to `origin`, and open a Pull Request targeting `main` with a concise summary and checklist.
+
+        Acceptance Criteria:
+        - [ ] Feature is implemented and covered by tests.
+        - [ ] Docs and examples updated.
+        - [ ] No regressions in Discovery → PRD → OAG → Execution.
+
+        Notes / Constraints:
+        - [Add budgets, policies, model hints, or integration notes here]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Additional Acceptance Criteria (Optional)
+      placeholder: |
+        - [ ] CLI flag documented with examples
+        - [ ] API request/response documented in README
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        You are welcome to go ahead and create the branch and open a PR yourself — we appreciate proactive contributions! ✨
+

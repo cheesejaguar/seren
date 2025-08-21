@@ -1,5 +1,1 @@
 blank_issues_enabled: false
-contact_links:
-  - name: Change Request (Bug or Feature)
-    url: https://github.com/cheesejaguar/seren/issues/new?template=change_request.yml
-    about: Use the standardized issue template to request bug fixes or new features.

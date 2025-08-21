@@ -1,0 +1,109 @@
+name: "🐛 Bug Report"
+description: "Something not working? File a bug with a Claude Code prompt and branch/PR plan."
+title: "[Bug]: <short summary>"
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please:
+        - Prefix the title with [Bug].
+        - Provide a complete prompt for Claude Code to implement the fix in a new branch.
+        - Feel free to create the branch and open a PR while you’re here. 🚀
+
+  - type: checkboxes
+    id: title_prefix
+    attributes:
+      label: Title Prefix
+      description: Confirm the title starts with [Bug].
+      options:
+        - label: I prefixed the title with [Bug].
+          required: true
+
+  - type: textarea
+    id: overview
+    attributes:
+      label: Summary / Context
+      description: What happened, where, and what did you expect instead?
+      placeholder: >
+        Example: When running `plugah-orchestrate init --mock`, questions.json is not generated.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python, Seren version, Plugah version, and anything else relevant.
+      placeholder: |
+        - OS: macOS 14.6
+        - Python: 3.12.8
+        - Seren: commit abc123
+        - Plugah: 0.1.0
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: List exact steps to reproduce the problem.
+      placeholder: |
+        1. Run `plugah-orchestrate init --mock`
+        2. Inspect repo root
+        3. Note that questions.json is missing
+    validations:
+      required: false
+
+  - type: textarea
+    id: claude_prompt
+    attributes:
+      label: Claude Code Prompt (Detailed)
+      description: Paste a detailed prompt for Claude Code. Instruct the agent to load this repo in your vibecoder of choice, create a new branch, implement the fix, update tests/docs, and open a PR.
+      render: markdown
+      value: |
+        You are Claude Code working in the "seren" repository (Plugah Orchestrator).
+
+        Bug:
+        - [Replace with the bug summary and expected behavior]
+
+        Instructions:
+        - Load the repository in your vibecoder of choice (Cursor, Windsurf, VS Code + Continue, Zed, etc.).
+        - Create a new branch from `main`:
+          - Branch name suggestion: `bugfix/<short-slug>`
+        - Implement the fix:
+          - Keep changes minimal and focused. Follow the existing `src/` layout and style.
+          - Add/adjust tests under `tests/` to cover the regression.
+          - Update `README.md` or CLI help if end-user behavior changes.
+        - Validate locally:
+          - Run `pytest` (mock mode where applicable).
+          - Sanity-check the CLI: `plugah-orchestrate quickstart --mock`.
+        - Commit, push the branch to `origin`, and open a Pull Request targeting `main` with a concise summary and checklist.
+
+        Acceptance Criteria:
+        - [ ] Bug is fixed and verified by tests.
+        - [ ] No regressions in Discovery → PRD → OAG → Execution.
+        - [ ] Docs/CLI help updated if necessary.
+
+        Constraints / Notes:
+        - [Add budgets, policies, model hints, or integration notes here]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Additional Acceptance Criteria (Optional)
+      placeholder: |
+        - [ ] Reproduction steps covered by test
+        - [ ] Error message clarifies required action
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        You are welcome to go ahead and create the branch and open a PR yourself — we appreciate proactive contributions! ✨
+
