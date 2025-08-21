@@ -32,8 +32,10 @@ def init(
     Start discovery and write questions.json.
     """
     cfg: Settings = default_settings()
-    if problem: cfg.problem = problem
-    if budget is not None: cfg.budget_hard_cap_usd = budget
+    if problem:
+        cfg.problem = problem
+    if budget is not None:
+        cfg.budget_hard_cap_usd = budget
 
     if mock:
         import os
@@ -55,8 +57,10 @@ def plan(
     Build PRD from answers, then plan OAG. Writes prd.json and oag.json.
     """
     cfg: Settings = default_settings()
-    if problem: cfg.problem = problem
-    if budget is not None: cfg.budget_hard_cap_usd = budget
+    if problem:
+        cfg.problem = problem
+    if budget is not None:
+        cfg.budget_hard_cap_usd = budget
 
     if mock:
         import os
@@ -70,7 +74,7 @@ def plan(
     console.print("[green]Wrote[/green] prd.json")
 
     console.rule("[bold]Organization Planning (OAG)[/bold]")
-    oag = asyncio.run(plan_oag(prd, cfg.budget_hard_cap_usd, model_hint=model, policy=policy))
+    _ = asyncio.run(plan_oag(prd, cfg.budget_hard_cap_usd, model_hint=model, policy=policy))
     console.print("[green]Wrote[/green] oag.json (Organizational Agent Graph)")
 
 @app.command()

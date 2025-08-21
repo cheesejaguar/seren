@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 from typing import Any, Sequence
 
@@ -16,7 +15,7 @@ except Exception:  # pragma: no cover
     except Exception:
         BudgetPolicy = None  # type: ignore
 
-from .io import read_json, write_json
+from .io import write_json
 
 # Keep a single BoardRoom per-process to preserve internal state across stages.
 _boardroom: BoardRoom | None = None
