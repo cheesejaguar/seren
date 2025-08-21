@@ -26,6 +26,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # Ensure Plugah is available (fallback to GitHub if not on PyPI)
+          python -m pip install plugah || python -m pip install "git+https://github.com/cheesejaguar/plugah.git"
           python -m pip install -e ".[dev]"
 
       - name: Lint (ruff)
