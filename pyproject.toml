@@ -6,6 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "plugah-orchestrator"
 version = "0.1.0"
 description = "AI agent orchestrator scaffold powered by Plugah (discovery → PRD → org plan → execution)."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Aaron" }]
+keywords = ["agents", "orchestrator", "plugah", "oag", "fastapi", "cli"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries",
+]
 requires-python = ">=3.11"
 dependencies = [
   "plugah>=0.1.0",
