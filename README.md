@@ -1,5 +1,10 @@
 # Seren — Plugah Orchestrator ✨
 
+[![CI](https://github.com/cheesejaguar/seren/actions/workflows/ci.yml/badge.svg)](https://github.com/cheesejaguar/seren/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/plugah-orchestrator.svg)](https://pypi.org/project/plugah-orchestrator/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](#)
+
 Seren is a minimal, runnable orchestrator around **[Plugah](https://github.com/cheesejaguar/plugah)** that drives dynamic agentic graph generation end‑to‑end:
 
 1) 🔎 Discovery → 2) 📝 PRD → 3) 🧩 Organization Planning (OAG) → 4) 🚀 Execution
