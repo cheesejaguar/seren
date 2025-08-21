@@ -24,6 +24,26 @@ def _br() -> BoardRoom:
     global _boardroom
     if _boardroom is None:
         _boardroom = BoardRoom()
+        # Ensure audit logger writes to an existing directory
+        try:
+            br = _boardroom
+            al = getattr(br, "audit_logger", None)
+            if al and hasattr(al, "log_event"):
+                orig = al.log_event
+
+                def _wrapped_log_event(event_type, data, level="info"):
+                    try:
+                        from pathlib import Path
+                        run_dir = getattr(al, "run_dir", None) or getattr(br, "run_dir", None)
+                        if run_dir:
+                            Path(run_dir, "logs").mkdir(parents=True, exist_ok=True)
+                    except Exception:
+                        pass
+                    return orig(event_type, data, level)
+
+                al.log_event = _wrapped_log_event  # type: ignore[attr-defined]
+        except Exception:
+            pass
     return _boardroom
 
 def map_policy(name: str | None):
@@ -64,6 +84,15 @@ async def run_discovery(problem: str, budget_usd: float, *, model_hint: str | No
         "context": None,
     })
     result = await _call_maybe_async(fn, **kwargs)
+    # Ensure Plugah's audit log folder exists if run_dir is present
+    try:
+        br = _br()
+        run_dir = getattr(br, "run_dir", None)
+        if run_dir:
+            from pathlib import Path
+            Path(run_dir, "logs").mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     # Accept dict with "questions" or direct list
     if isinstance(result, dict):
         qs = result.get("questions", [])
