@@ -1,0 +1,3 @@
+[console_scripts]
+plugah-orchestrate = app.cli:app
+plugah-web = app.web:serve
