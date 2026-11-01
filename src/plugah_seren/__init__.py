@@ -34,12 +34,22 @@ def enable():
     """Install SerenPlanner into plugah.boardroom as the Planner."""
     if _state.installed:
         return
-    # Import here to avoid importing OpenAI in environments that only need mock mode
-    from app.seren_planner import SerenPlanner  # type: ignore
     import plugah.boardroom as br  # type: ignore
 
+    # Capture the current planner *before* importing app.seren_planner, whose
+    # import side effect swaps in SerenPlanner.
+    original = getattr(br, "Planner", None)
+    # Import here to avoid importing OpenAI in environments that only need mock mode
+    from app.seren_planner import SerenPlanner  # type: ignore
+
     if _state.original_planner is None:
-        _state.original_planner = getattr(br, "Planner", None)
+        if original is SerenPlanner:
+            # app.seren_planner was imported earlier and already replaced the planner
+            try:
+                from plugah.planner import Planner as original  # type: ignore
+            except Exception:
+                pass
+        _state.original_planner = original
     br.Planner = SerenPlanner  # type: ignore[assignment]
     _state.installed = True
 

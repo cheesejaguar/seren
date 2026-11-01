@@ -239,7 +239,9 @@ class SerenPlanner:
     def _role_to_level(self, role: str) -> RoleLevel:
         # Fallback only; primary path expects level from OpenAI output
         r = role.lower()
-        if any(k in r for k in ["ceo", "cto", "cfo", "chief"]):
+        # Match whole words: a substring check would treat "Director" as "cto"
+        words = set(r.replace("-", " ").replace("/", " ").split())
+        if words & {"ceo", "cto", "cfo", "chief"}:
             return RoleLevel.C_SUITE
         if r.startswith("vp"):
             return RoleLevel.VP
@@ -316,10 +318,16 @@ class SerenPlanner:
             tasks.append(task)
 
         # Task dependencies
-        title_to_id = {t.description: t.id for t in tasks}
-        for t in design.get("tasks", []) or []:
+        # depends_on entries reference task titles (descriptions also accepted)
+        design_tasks = design.get("tasks", []) or []
+        title_to_id: dict[str, str] = {}
+        for t, task in zip(design_tasks, tasks):
+            title_to_id.setdefault(task.description, task.id)
+            if t.get("title"):
+                title_to_id[t["title"]] = task.id
+        for t, task in zip(design_tasks, tasks):
             depends = t.get("depends_on", []) or []
-            to_id = title_to_id.get(t.get("description", t.get("title", "")))
+            to_id = task.id
             for d in depends:
                 from_id = title_to_id.get(d)
                 if from_id and to_id:
@@ -519,7 +527,7 @@ def install_seren_planner() -> type[SerenPlanner]:
     if os.getenv("SEREN_PLANNER", "on").lower() in {"0", "false", "off"}:
         return SerenPlanner
     import plugah.boardroom as br
-    br.Planner = SerenPlanner  # type: ignore[assignment]
+    br.Planner = SerenPlanner  # type: ignore[assignment,misc]
     return SerenPlanner
 
 # Make Seren the default planner on import (can be disabled via SEREN_PLANNER=off)
